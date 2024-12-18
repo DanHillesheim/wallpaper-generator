@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/wallpaper-generator/'
+  base: './', // Change this line from '/wallpaper-generator/' to './'
 })
