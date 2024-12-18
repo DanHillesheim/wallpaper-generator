@@ -206,7 +206,7 @@ const WallpaperGenerator: FC = () => {
 
                         {/* Logo Toggle */}
                         <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Display full Bitwarden logo</span>
+                            <span className="text-sm text-gray-700">Display full Company logo</span>
                             <div className="relative inline-block w-11 h-6 transition duration-200 ease-in-out">
                                 <input
                                     type="checkbox"
@@ -241,10 +241,10 @@ const WallpaperGenerator: FC = () => {
                             {showLogo && (
                                 <>
                                     <div className="absolute top-4 left-4">
-                                        <img src="/bitwarden-logo.svg" alt="Bitwarden" className="h-6" />
+                                        <img src="/logo.svg" alt="Logo" className="h-6" />
                                     </div>
                                     <div className="absolute top-4 right-4">
-                                        <span className="text-sm text-gray-700">bitwarden.com</span>
+                                        <span className="text-sm text-gray-700">website.com</span>
                                     </div>
                                 </>
                             )}
