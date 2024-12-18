@@ -3,8 +3,6 @@ import { FC, useState } from 'react';
 type ColorScheme = {
     bg: string;
     text: string;
-    from?: string;
-    to?: string;
 }
 
 interface ColorSchemes {
@@ -25,15 +23,119 @@ const WallpaperGenerator: FC = () => {
     ];
 
     const colorSchemes: ColorSchemes = {
-        "gold-red": { bg: "#FFC107", text: "#FF4B4B" },
-        "teal-indigo": { bg: "#14B8A6", text: "#4F46E5" },
-        "gold-blue": { bg: "#FFC107", text: "#2563EB" },
+        "gold-red": { bg: "rgb(255, 193, 7)", text: "rgb(255, 75, 75)" },
+        "teal-indigo": { bg: "rgb(20, 184, 166)", text: "rgb(79, 70, 229)" },
+        "blue-indigo": { bg: "rgb(59, 130, 246)", text: "rgb(79, 70, 229)" }
+    };
+
+    const getThemeFont = (theme: string): string => {
+        switch (theme) {
+            case 'funky':
+                return 'Helvetica, Arial, sans-serif';
+            case 'bold':
+                return '"Times New Roman", Times, serif';
+            case 'shadow':
+                return '"Courier New", Courier, monospace';
+            default:
+                return 'Helvetica, Arial, sans-serif';
+        }
+    };
+
+    const getPosition = (pos: string): { container: string, text: string } => {
+        switch (pos) {
+            case 'center':
+                return {
+                    container: 'flex items-center justify-center',
+                    text: 'text-center'
+                };
+            case 'bottom-right':
+                return {
+                    container: 'flex items-end justify-end pb-12 pr-12',
+                    text: 'text-right'
+                };
+            case 'bottom-left':
+                return {
+                    container: 'flex items-start justify-start pb-12 pl-12',
+                    text: 'text-left'
+                };
+            default:
+                return {
+                    container: 'flex items-center justify-center',
+                    text: 'text-center'
+                };
+        }
     };
 
     const handleDownload = (): void => {
-        // Download functionality remains the same
-        console.log('Downloading...');
+        const preview = document.querySelector('.preview-container');
+        if (!preview) return;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // Set canvas dimensions
+        const width = 1200;
+        const height = 900; // 4:3 aspect ratio
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw background
+        ctx.fillStyle = colorSchemes[selectedColor].bg;
+        ctx.fillRect(0, 0, width, height);
+
+        // Draw text
+        ctx.fillStyle = colorSchemes[selectedColor].text;
+        ctx.font = `bold ${width/15}px ${getThemeFont(selectedTheme)}`;
+        
+        // Set text alignment based on position
+        if (position === 'bottom-right') {
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'bottom';
+        } else if (position === 'bottom-left') {
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'bottom';
+        } else {
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+        }
+
+        // Position text according to selection
+        let textX = width/2;
+        let textY = height/2;
+        
+        if (position === 'bottom-left') {
+            textX = width * 0.1;
+            textY = height * 0.9;
+        } else if (position === 'bottom-right') {
+            textX = width * 0.9;
+            textY = height * 0.9;
+        }
+        
+        ctx.fillText(selectedPhrase, textX, textY);
+
+        // Draw logo if enabled
+        if (showLogo) {
+            ctx.fillStyle = '#000000';
+            ctx.font = '24px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'top';
+            ctx.fillText('bitwarden.com', width - 20, 40);
+        }
+
+        // Convert to blob and download
+        canvas.toBlob((blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = `wallpaper.${downloadFormat}`;
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+        }, `image/${downloadFormat}`);
     };
+
+    const positions = getPosition(position);
 
     return (
         <div className="w-full min-h-screen bg-white">
@@ -66,9 +168,9 @@ const WallpaperGenerator: FC = () => {
                                 onChange={(e) => setSelectedTheme(e.target.value)}
                                 className="w-full bg-gray-50 border-0 py-3 px-4 rounded-md focus:ring-2 focus:ring-blue-500"
                             >
-                                <option value="funky">Funky</option>
-                                <option value="bold">Bold</option>
-                                <option value="shadow">Shadow</option>
+                                <option value="funky">Funky (Helvetica)</option>
+                                <option value="bold">Bold (Times New Roman)</option>
+                                <option value="shadow">Shadow (Courier)</option>
                             </select>
                             <p className="mt-2 text-sm text-gray-500">Choose the background's graphic theme.</p>
                         </div>
@@ -81,9 +183,9 @@ const WallpaperGenerator: FC = () => {
                                 onChange={(e) => setSelectedColor(e.target.value)}
                                 className="w-full bg-gray-50 border-0 py-3 px-4 rounded-md focus:ring-2 focus:ring-blue-500"
                             >
-                                <option value="gold-red">Yellow & Red</option>
-                                <option value="teal-indigo">Teal & Indigo</option>
-                                <option value="gold-blue">Yellow & Blue</option>
+                                <option value="gold-red">Yellow background with red text</option>
+                                <option value="teal-indigo">Teal background with indigo text</option>
+                                <option value="blue-indigo">Blue background with indigo text</option>
                             </select>
                             <p className="mt-2 text-sm text-gray-500">Choose the background's color scheme.</p>
                         </div>
@@ -105,21 +207,37 @@ const WallpaperGenerator: FC = () => {
                         {/* Logo Toggle */}
                         <div className="flex items-center justify-between">
                             <span className="text-sm text-gray-700">Display full Bitwarden logo</span>
-                            <button
-                                onClick={() => setShowLogo(!showLogo)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showLogo ? 'bg-blue-600' : 'bg-gray-200'}`}
-                            >
-                                <span
-                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showLogo ? 'translate-x-6' : 'translate-x-1'}`}
+                            <div className="relative inline-block w-11 h-6 transition duration-200 ease-in-out">
+                                <input
+                                    type="checkbox"
+                                    id="toggle"
+                                    className="hidden"
+                                    checked={showLogo}
+                                    onChange={() => setShowLogo(!showLogo)}
                                 />
-                            </button>
+                                <label
+                                    htmlFor="toggle"
+                                    className={`absolute block w-11 h-6 rounded-full cursor-pointer transition-colors duration-200 ease-in-out ${
+                                        showLogo ? 'bg-blue-600' : 'bg-gray-200'
+                                    }`}
+                                >
+                                    <span
+                                        className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ease-in-out ${
+                                            showLogo ? 'translate-x-5' : 'translate-x-0'
+                                        }`}
+                                    />
+                                </label>
+                            </div>
                         </div>
                     </div>
 
                     {/* Right Column - Preview */}
                     <div>
-                        <div className="aspect-[4/3] bg-yellow-400 rounded-lg relative overflow-hidden">
-                            {/* Top corners - Now conditional based on showLogo */}
+                        <div 
+                            className="aspect-[4/3] rounded-lg relative overflow-hidden preview-container"
+                            style={{ backgroundColor: colorSchemes[selectedColor].bg }}
+                        >
+                            {/* Top corners */}
                             {showLogo && (
                                 <>
                                     <div className="absolute top-4 left-4">
@@ -132,11 +250,12 @@ const WallpaperGenerator: FC = () => {
                             )}
 
                             {/* Main content */}
-                            <div className="absolute inset-0 flex items-center justify-center">
+                            <div className={`absolute inset-0 ${positions.container}`}>
                                 <h2
-                                    className="text-4xl font-bold text-red-500 max-w-[80%] text-center"
+                                    className={`text-4xl font-bold ${positions.text}`}
                                     style={{
-                                        color: colorSchemes[selectedColor].text
+                                        color: colorSchemes[selectedColor].text,
+                                        fontFamily: getThemeFont(selectedTheme)
                                     }}
                                 >
                                     {selectedPhrase}
